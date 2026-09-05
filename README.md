@@ -62,17 +62,17 @@ The compiled companion is packaged into `vscode-plugin/pide-vscode.vsix`. Build 
 
 Push the source changes to `kitevi/pide` before installing the remote Pi package. Changing a local checkout does not update the remote package.
 
-Normal pushes and pull requests run **Check and package** without publishing a release.
+There are no automatic push/PR checks. The manual release workflow installs and builds only the VS Code companion; it does not install the root Pi package or run the optional local tests/typechecks.
 
 To publish, use the same process as `rfs`:
 
 1. Commit and push your source changes to `main`.
 2. Open **Actions → Release → Run workflow**, select **main**, and run it. If Actions is disabled for the fork, enable it first.
-3. Wait for the tests, build, and release to finish, then run `/ide-setup` to install it.
+3. Wait for the build and release to finish, then run `/ide-setup` to install it.
 
 The release workflow generates a version from the current UTC build time: `YYYY.MD.HMS`, with no leading zeroes. For example, `2026-07-09 20:01:11 UTC` becomes `2026.709.200111`. Each later build gets a higher version that VS Code can recognize as an upgrade.
 
-Versions are stamped into both package manifests only in the build checkout. The checked-in versions remain development defaults: **you do not edit version numbers or create/push tags**. GitHub creates the timestamp tag at the source commit being built and publishes `pide-vscode.vsix` as the latest release. Releases are serialized so builds do not race to publish out of order.
+The version is stamped into the VS Code package manifest only in the build checkout. The checked-in versions remain development defaults: **you do not edit version numbers or create/push tags**. GitHub creates the timestamp tag at the source commit being built and publishes `pide-vscode.vsix` as the latest release. Releases are serialized so builds do not race to publish out of order.
 
 Only GitHub's automatically supplied `GITHUB_TOKEN` is used. No Marketplace credentials or npm publishing account are needed. `/ide-setup` continues to install the latest stable GitHub release.
 
