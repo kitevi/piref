@@ -50,20 +50,34 @@ function formatReference(selection: Selection): string {
   return `Referencing ${reference}\n`;
 }
 
+function buildIdeText(selection: Selection, rawArgs: string): string {
+  const reference = formatReference(selection);
+  const prompt = rawArgs.trim();
+  if (prompt === "") return reference;
+  return `${reference}${prompt}`;
+}
+
+function buildFallbackText(rawArgs: string): string | null {
+  const prompt = rawArgs.trim();
+  return prompt === "" ? null : prompt;
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
 export default function pide(pi: ExtensionAPI) {
   pi.registerCommand("ide", {
-    description: "Insert the current VS Code file or selection reference",
-    handler: async (_args, ctx) => {
+    description: "Insert the current VS Code file or selection reference [prompt]",
+    handler: async (args, ctx) => {
       const selection = await readSelection();
       if (!selection) {
+        const fallback = buildFallbackText(args);
+        if (fallback !== null) ctx.ui.setEditorText(fallback);
         ctx.ui.notify("No recent VS Code selection. Open a file in VS Code, or run /ide-setup first.", "warning");
         return;
       }
-      ctx.ui.setEditorText(formatReference(selection));
+      ctx.ui.setEditorText(buildIdeText(selection, args));
     },
   });
 

@@ -52,8 +52,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function run(name: string) {
-  await commands.get(name)!.handler("", ctx);
+async function run(name: string, args = "") {
+  await commands.get(name)!.handler(args, ctx);
 }
 
 describe("minimal Pi integration", () => {
@@ -93,6 +93,29 @@ describe("minimal Pi integration", () => {
     files.readFile.mockRejectedValue(new Error("ENOENT"));
     await run("ide");
     expect(setEditorText).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining("No recent VS Code selection"), "warning");
+  });
+
+  it("appends trailing prompt text after the reference without submitting", async () => {
+    await run("ide", "explain this");
+    expect(setEditorText).toHaveBeenCalledWith("Referencing /project/file.ts\nexplain this");
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("trims surrounding whitespace but preserves inner newlines", async () => {
+    await run("ide", "  explain\nmore  ");
+    expect(setEditorText).toHaveBeenCalledWith("Referencing /project/file.ts\nexplain\nmore");
+  });
+
+  it("keeps legacy output for whitespace-only args", async () => {
+    await run("ide", "   \n  ");
+    expect(setEditorText).toHaveBeenCalledWith("Referencing /project/file.ts\n");
+  });
+
+  it("restores trailing prompt text when no selection is available", async () => {
+    files.readFile.mockRejectedValue(new Error("ENOENT"));
+    await run("ide", "don't lose me");
+    expect(setEditorText).toHaveBeenCalledWith("don't lose me");
     expect(notify).toHaveBeenCalledWith(expect.stringContaining("No recent VS Code selection"), "warning");
   });
 

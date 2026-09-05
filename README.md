@@ -23,7 +23,7 @@ Run `/ide-setup`, then reload your VS Code window. Open a file or select some li
 Referencing /path/to/file.ts:10-15
 ```
 
-`/ide` replaces Pi's input with the reference. It does not submit a message or copy selected source text.
+`/ide` replaces Pi's input with the reference. It does not submit a message or copy selected source text. You can also type `/ide your prompt` on one line: the prompt is kept after the reference so nothing is lost.
 
 ## No Microsoft account required
 
