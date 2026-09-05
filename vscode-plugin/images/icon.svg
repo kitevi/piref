@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- pide: pi + line-range marker. Flat, 2 colors, grid-aligned for small sizes. -->
+  <rect width="256" height="256" rx="56" fill="#16161E"/>
+  <rect x="1.5" y="1.5" width="253" height="253" rx="54.5" fill="none" stroke="#2E2E3E" stroke-width="3"/>
+  <!-- pi top bar -->
+  <line x1="62" y1="92" x2="194" y2="92" stroke="#EDEDF2" stroke-width="24" stroke-linecap="round"/>
+  <!-- pi left leg -->
+  <line x1="90" y1="92" x2="90" y2="176" stroke="#EDEDF2" stroke-width="24" stroke-linecap="round"/>
+  <!-- pi right leg: white upper stub + cyan selection pill, intentional gap -->
+  <line x1="166" y1="92" x2="166" y2="128" stroke="#EDEDF2" stroke-width="24" stroke-linecap="round"/>
+  <line x1="166" y1="160" x2="166" y2="176" stroke="#3BC7FF" stroke-width="24" stroke-linecap="round"/>
+</svg>
