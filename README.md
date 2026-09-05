@@ -1,155 +1,81 @@
-# pide - IDE Integration for Pi
+# pide — VS Code references for Pi
 
-Shows your current IDE file/selection in [pi](https://github.com/badlogic/pi-mono) and lets you quickly reference it with `Ctrl+;`.
+A minimal, VS Code-only fork of [pierre-borckmans/pide](https://github.com/pierre-borckmans/pide).
 
-![screenshot](screenshot-v2.png)
+Two Pi commands, nothing in the footer, no shortcuts, and no background polling in Pi:
 
-## Setup
+| Command | Purpose |
+| --- | --- |
+| `/ide` | Put a reference to the current VS Code file or selected lines into Pi's input. |
+| `/ide-setup` | Download and install the VS Code companion from this repository's latest GitHub release. |
 
-```bash
-pi install npm:@pborck/pi-de
+## Install
+
+```sh
+pi install https://github.com/kitevi/pide
 ```
 
-Then run `/ide-setup` in pi to install your IDE plugin:
+Or add `"https://github.com/kitevi/pide"` to the `packages` array in Pi's `settings.json`.
 
-![setup](screenshot-setup.png)
+Run `/ide-setup`, then reload your VS Code window. Open a file or select some lines, and run `/ide` in Pi. For example:
 
-## Usage
-
-Select code in your IDE, then press `Ctrl+;` in pi to reference it:
-
-![usage](screenshot-usage.png)
-
-## Installation
-
-### Pi Extension
-
-```bash
-# Install from npm
-pi install npm:@pborck/pi-de
-
-# Or from git
-pi install github.com/pierre-borckmans/pide
+```text
+Referencing /path/to/file.ts:10-15
 ```
 
-### IDE Plugins
+`/ide` replaces Pi's input with the reference. It does not submit a message or copy selected source text.
 
-> **Note:** `/ide-setup` handles plugin installation automatically. The instructions below are for manual installation only.
+## No Microsoft account required
 
-**Currently supported IDEs:**
-- VS Code / Cursor / VSCodium
-- Neovim
-- IntelliJ IDEA
-- GoLand
-- WebStorm
-- PyCharm
-- CLion
-- Rider
-- RubyMine
-- PhpStorm
-- DataGrip
-- Android Studio
-- RustRover
+The companion is **sideloaded**, not published to the VS Code Marketplace. `/ide-setup` downloads `pide-vscode.vsix` from GitHub and runs:
 
-**VS Code / Cursor / VSCodium:**
-```bash
-code --install-extension ./vscode-plugin/pide-vscode-0.1.0.vsix
+```sh
+code --install-extension /path/to/pide-vscode.vsix --force
 ```
 
-**Neovim (lazy.nvim):**
-```lua
-{
-  "pierre-borckmans/pide",
-  config = function()
-    require("pide").setup()
-  end,
-}
-```
+VS Code's `code` CLI must be on `PATH`. The first GitHub release must exist before `/ide-setup` can download it; see below. You can also build and install the VSIX locally without any account.
 
-**Neovim (packer.nvim):**
-```lua
-use {
-  "pierre-borckmans/pide",
-  config = function()
-    require("pide").setup()
-  end,
-}
-```
+The companion deliberately retains the original `your-name.pide-vscode` extension ID so installing it upgrades the old companion instead of running two copies. This publisher field is package metadata, not a Microsoft login.
 
-**JetBrains (IntelliJ, GoLand, WebStorm, PyCharm, etc.):**
-1. Build: `cd jetbrains-plugin && ./gradlew buildPlugin`
-2. Install: Settings → Plugins → ⚙️ → Install from Disk → select `build/distributions/pide-jetbrains-0.1.0.zip`
+## How it works
 
-## Commands
+The VS Code companion automatically writes the active file path, optional line range, and timestamp to `~/.pi/ide-selection.json`. It does not store the selected source text. Pi reads that file only when `/ide` runs. Missing, invalid, or more-than-one-hour-old selections are ignored.
 
-![commands](screenshot-commands.png)
+All local Pi sessions share the most recently reported VS Code selection. No servers, ports, status widgets, or Pi file watchers are involved.
 
-| Command | Description |
-|---------|-------------|
-| `/ide` | Insert file reference into editor |
-| `/ide-clear` | Clear the current selection |
-| `/ide-setup` | Install IDE plugin |
+## Development
 
-## How It Works
+Node.js 22.17+ is required.
 
-```
-┌─────────────┐                      ┌──────────────────────────┐
-│    IDE      │ ───── writes to ────▶│ ~/.pi/ide-selection.json │
-│             │                      │                          │
-└─────────────┘                      └───────────┬──────────────┘
-                                                 │
-                           ┌─────────────────────┼─────────────────────┐
-                           │ file watch          │ file watch          │
-                           ▼                     ▼                     ▼
-                    ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-                    │  pi (term1) │       │  pi (term2) │       │  pi (term3) │
-                    └─────────────┘       └─────────────┘       └─────────────┘
-```
-
-All pi instances see the selection via file-based communication. No port conflicts!
-
-## JSON Format
-
-IDEs write to `~/.pi/ide-selection.json`:
-
-```json
-{
-  "file": "/absolute/path/to/file.ts",
-  "selection": "selected text (optional)",
-  "startLine": 10,
-  "endLine": 15,
-  "ide": "vscode",
-  "timestamp": 1707570000000
-}
-```
-
-## Building IDE Plugins
-
-### VS Code
-
-```bash
-cd vscode-plugin
+```sh
 npm install
-npm run compile
-npm run package
+npm --prefix vscode-plugin install
+npm test
+npm run typecheck
+npm run package:vscode
+code --install-extension vscode-plugin/pide-vscode.vsix --force
 ```
 
-### Neovim
+The compiled companion is packaged into `vscode-plugin/pide-vscode.vsix`. Build artifacts are not committed. Project `.npmrc` files disable lockfile generation; dependencies resolve from the package manifests.
 
-No build step required! The plugin is pure Lua. For development:
+## Releases
 
-```bash
-# Symlink to your nvim config for testing
-ln -s $(pwd)/nvim-plugin ~/.local/share/nvim/site/pack/pide/start/pide
-```
+Push the source changes to `kitevi/pide` before installing the remote Pi package. Changing a local checkout does not update the remote package.
 
-### JetBrains
+Normal pushes and pull requests run **Check and package** without publishing a release.
 
-```bash
-cd jetbrains-plugin
-./gradlew buildPlugin
-```
+To publish, use the same process as `rfs`:
+
+1. Commit and push your source changes to `main`.
+2. Open **Actions → Release → Run workflow**, select **main**, and run it. If Actions is disabled for the fork, enable it first.
+3. Wait for the tests, build, and release to finish, then run `/ide-setup` to install it.
+
+The release workflow generates a version from the current UTC build time: `YYYY.MD.HMS`, with no leading zeroes. For example, `2026-07-09 20:01:11 UTC` becomes `2026.709.200111`. Each later build gets a higher version that VS Code can recognize as an upgrade.
+
+Versions are stamped into both package manifests only in the build checkout. The checked-in versions remain development defaults: **you do not edit version numbers or create/push tags**. GitHub creates the timestamp tag at the source commit being built and publishes `pide-vscode.vsix` as the latest release. Releases are serialized so builds do not race to publish out of order.
+
+Only GitHub's automatically supplied `GITHUB_TOKEN` is used. No Marketplace credentials or npm publishing account are needed. `/ide-setup` continues to install the latest stable GitHub release.
 
 ## License
 
-MIT
+MIT. Original copyright retained in `LICENSE`.

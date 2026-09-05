@@ -1,34 +1,29 @@
-# Pi IDE Integration for VS Code
+# Pi VS Code References
 
-Sends your current file and selection to [pi](https://github.com/badlogic/pi-mono) coding agent.
+A small, automatically activated companion for [kitevi/pide](https://github.com/kitevi/pide).
 
-## Features
+Open a saved file or select lines in VS Code, then run `/ide` in Pi. The companion writes only the active path, line range, and timestamp to `~/.pi/ide-selection.json`; it does not store the selected source text.
 
-- Automatically sends selection changes to pi
-- Works with multiple pi terminals (file-based communication)
-- Commands to manually send or clear selection
+There are no companion commands, keybindings, or settings. Nothing is displayed in Pi's footer.
 
-## Usage
+## Install without a Microsoft account
 
-1. Install the extension
-2. Open pi in a terminal
-3. Select code in VS Code → it appears in pi's widget
-4. Use `/ide` command in pi to insert selection into your prompt
+Run `/ide-setup` in Pi, or download `pide-vscode.vsix` from the repository's GitHub releases and install it:
 
-## Commands
+```sh
+code --install-extension pide-vscode.vsix --force
+```
 
-| Command | Description |
-|---------|-------------|
-| `Pi: Send Selection to Pi` | Manually send current selection |
-| `Pi: Clear Pi Selection` | Clear the current selection |
+Reload the VS Code window after installing. No Marketplace publishing or login is involved. The original `your-name.pide-vscode` extension ID is retained to upgrade existing sideloaded installations.
 
-## Settings
+## Build locally
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `pide.autoSend` | `true` | Automatically send selection changes |
-| `pide.debounceMs` | `100` | Debounce delay in milliseconds |
+From this directory:
 
-## How it works
+```sh
+npm install
+npm run package
+code --install-extension pide-vscode.vsix --force
+```
 
-The extension writes selection data to `~/.pi/ide-selection.json`. All running pi instances watch this file and show the selection in their UI.
+The package command compiles the extension automatically. Run the repository's **Release** workflow in GitHub Actions to publish a VSIX with an automatically generated timestamp version. No manual version bump, tag push, or Microsoft account is needed.

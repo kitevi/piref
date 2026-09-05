@@ -1,0 +1,52 @@
+name: Release
+
+# Like rfs: Actions -> Release -> Run workflow -> main.
+# The build gets a UTC YYYY.MD.HMS version; GitHub creates the tag for us.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Finish one release before generating the next timestamp. Do not cancel uploads.
+concurrency:
+  group: pide-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm --prefix vscode-plugin install
+      - run: npm test
+      - run: npm run typecheck
+      - name: Compute and stamp build version
+        id: version
+        run: |
+          version=$(node scripts/release-version.mjs)
+          npm version "$version" --no-git-tag-version --ignore-scripts
+          npm --prefix vscode-plugin version "$version" --no-git-tag-version --ignore-scripts
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing version $version"
+      - run: npm run package:vscode
+      - name: Publish GitHub release and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$RELEASE_VERSION" vscode-plugin/pide-vscode.vsix \
+            --target "$GITHUB_SHA" \
+            --title "$RELEASE_VERSION" \
+            --generate-notes \
+            --latest
