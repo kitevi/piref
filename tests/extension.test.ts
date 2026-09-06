@@ -19,6 +19,7 @@ let exec: ReturnType<typeof vi.fn>;
 let fetchMock: ReturnType<typeof vi.fn>;
 let setEditorText: ReturnType<typeof vi.fn>;
 let notify: ReturnType<typeof vi.fn>;
+let setWidget: ReturnType<typeof vi.fn>;
 let ctx: ExtensionCommandContext;
 let on: ReturnType<typeof vi.fn>;
 let registerShortcut: ReturnType<typeof vi.fn>;
@@ -36,7 +37,8 @@ beforeEach(() => {
   registerShortcut = vi.fn();
   setEditorText = vi.fn();
   notify = vi.fn();
-  ctx = { ui: { setEditorText, notify } } as unknown as ExtensionCommandContext;
+  setWidget = vi.fn();
+  ctx = { ui: { setEditorText, notify, setWidget } } as unknown as ExtensionCommandContext;
   fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([80, 75, 3, 4])));
   vi.stubGlobal("fetch", fetchMock);
   pide({
@@ -72,6 +74,13 @@ describe("minimal Pi integration", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  it.each(["", "explain this"])("requests a repaint after setting editor text (%j)", async args => {
+    await run("ide", args);
+    expect(setWidget).toHaveBeenCalledExactlyOnceWith("pide-repaint", undefined);
+    expect(setWidget.mock.invocationCallOrder[0]).toBeGreaterThan(setEditorText.mock.invocationCallOrder[0]!);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it.each([
     { startLine: 4, endLine: 4, suffix: ":4" },
     { startLine: 4, endLine: 8, suffix: ":4-8" },
@@ -93,6 +102,7 @@ describe("minimal Pi integration", () => {
     files.readFile.mockRejectedValue(new Error("ENOENT"));
     await run("ide");
     expect(setEditorText).not.toHaveBeenCalled();
+    expect(setWidget).not.toHaveBeenCalled();
     expect(notify).toHaveBeenCalledWith(expect.stringContaining("No recent VS Code selection"), "warning");
   });
 

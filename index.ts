@@ -78,6 +78,8 @@ export default function pide(pi: ExtensionAPI) {
         return;
       }
       ctx.ui.setEditorText(buildIdeText(selection, args));
+      // Older pi versions don't repaint after setEditorText; removing an unused widget does.
+      ctx.ui.setWidget("pide-repaint", undefined);
     },
   });
 
