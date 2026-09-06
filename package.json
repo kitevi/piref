@@ -1,5 +1,5 @@
 {
-  "name": "@kitevi/pi-de",
+  "name": "@kitevi/piref",
   "version": "0.2.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
   "keywords": ["pi-package", "vscode"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/kitevi/pide"
+    "url": "https://github.com/kitevi/piref"
   },
   "author": "Pierre Borckmans",
   "contributors": ["kitevi"],

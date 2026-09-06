@@ -10,7 +10,7 @@ permissions:
 
 # Finish one release before generating the next timestamp. Do not cancel uploads.
 concurrency:
-  group: pide-release
+  group: piref-release
   cancel-in-progress: false
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "$RELEASE_VERSION" vscode-plugin/pide-vscode.vsix \
+          gh release create "$RELEASE_VERSION" vscode-plugin/piref-vscode.vsix \
             --target "$GITHUB_SHA" \
             --title "$RELEASE_VERSION" \
             --generate-notes \

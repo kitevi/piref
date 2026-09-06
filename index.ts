@@ -5,8 +5,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const SELECTION_FILE = join(homedir(), ".pi", "ide-selection.json");
 const MAX_SELECTION_AGE_MS = 60 * 60 * 1000;
-const RELEASES_URL = "https://github.com/kitevi/pide/releases";
-const VSIX_URL = `${RELEASES_URL}/latest/download/pide-vscode.vsix`;
+const RELEASES_URL = "https://github.com/kitevi/piref/releases";
+const VSIX_URL = `${RELEASES_URL}/latest/download/piref-vscode.vsix`;
 
 interface Selection {
   file: string;
@@ -66,7 +66,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export default function pide(pi: ExtensionAPI) {
+export default function piref(pi: ExtensionAPI) {
   pi.registerCommand("ide", {
     description: "Insert the current VS Code file or selection reference [prompt]",
     handler: async (args, ctx) => {
@@ -79,7 +79,7 @@ export default function pide(pi: ExtensionAPI) {
       }
       ctx.ui.setEditorText(buildIdeText(selection, args));
       // Older pi versions don't repaint after setEditorText; removing an unused widget does.
-      ctx.ui.setWidget("pide-repaint", undefined);
+      ctx.ui.setWidget("piref-repaint", undefined);
     },
   });
 
@@ -98,11 +98,11 @@ export default function pide(pi: ExtensionAPI) {
         ctx.ui.notify("Downloading the VS Code companion from GitHub…", "info");
         const response = await fetch(VSIX_URL, { signal: AbortSignal.timeout(30_000) });
         if (!response.ok) {
-          throw new Error(`Download failed (HTTP ${response.status}). A release containing pide-vscode.vsix must exist at ${RELEASES_URL}.`);
+          throw new Error(`Download failed (HTTP ${response.status}). A release containing piref-vscode.vsix must exist at ${RELEASES_URL}.`);
         }
 
-        installDir = await mkdtemp(join(tmpdir(), "pide-install-"));
-        const vsixPath = join(installDir, "pide-vscode.vsix");
+        installDir = await mkdtemp(join(tmpdir(), "piref-install-"));
+        const vsixPath = join(installDir, "piref-vscode.vsix");
         await writeFile(vsixPath, new Uint8Array(await response.arrayBuffer()));
         const result = await pi.exec("code", ["--install-extension", vsixPath, "--force"], { timeout: 60_000 });
         if (result.code !== 0) {

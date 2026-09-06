@@ -1,4 +1,4 @@
-# pide — VS Code references for Pi
+# piref — VS Code references for Pi
 
 A minimal, VS Code-only fork of [pierre-borckmans/pide](https://github.com/pierre-borckmans/pide).
 
@@ -12,10 +12,10 @@ Two Pi commands, nothing in the footer, no shortcuts, and no background polling 
 ## Install
 
 ```sh
-pi install https://github.com/kitevi/pide
+pi install https://github.com/kitevi/piref
 ```
 
-Or add `"https://github.com/kitevi/pide"` to the `packages` array in Pi's `settings.json`.
+Or add `"https://github.com/kitevi/piref"` to the `packages` array in Pi's `settings.json`.
 
 Run `/ide-setup`, then reload your VS Code window. Open a file or select some lines, and run `/ide` in Pi. For example:
 
@@ -27,15 +27,15 @@ Referencing /path/to/file.ts:10-15
 
 ## No Microsoft account required
 
-The companion is **sideloaded**, not published to the VS Code Marketplace. `/ide-setup` downloads `pide-vscode.vsix` from GitHub and runs:
+The companion is **sideloaded**, not published to the VS Code Marketplace. `/ide-setup` downloads `piref-vscode.vsix` from GitHub and runs:
 
 ```sh
-code --install-extension /path/to/pide-vscode.vsix --force
+code --install-extension /path/to/piref-vscode.vsix --force
 ```
 
 VS Code's `code` CLI must be on `PATH`. The first GitHub release must exist before `/ide-setup` can download it; see below. You can also build and install the VSIX locally without any account.
 
-The companion deliberately retains the original `your-name.pide-vscode` extension ID so installing it upgrades the old companion instead of running two copies. This publisher field is package metadata, not a Microsoft login.
+The companion uses the `your-name.piref-vscode` extension ID. This publisher field is package metadata, not a Microsoft login. If you previously installed the old `your-name.pide-vscode` companion, uninstall it to avoid running two copies.
 
 ## How it works
 
@@ -53,14 +53,14 @@ npm --prefix vscode-plugin install
 npm test
 npm run typecheck
 npm run package:vscode
-code --install-extension vscode-plugin/pide-vscode.vsix --force
+code --install-extension vscode-plugin/piref-vscode.vsix --force
 ```
 
-The compiled companion is packaged into `vscode-plugin/pide-vscode.vsix`. Build artifacts are not committed. Project `.npmrc` files disable lockfile generation; dependencies resolve from the package manifests.
+The compiled companion is packaged into `vscode-plugin/piref-vscode.vsix`. Build artifacts are not committed. Project `.npmrc` files disable lockfile generation; dependencies resolve from the package manifests.
 
 ## Releases
 
-Push the source changes to `kitevi/pide` before installing the remote Pi package. Changing a local checkout does not update the remote package.
+Push the source changes to `kitevi/piref` before installing the remote Pi package. Changing a local checkout does not update the remote package.
 
 There are no automatic push/PR checks. The manual release workflow installs and builds only the VS Code companion; it does not install the root Pi package or run the optional local tests/typechecks.
 
@@ -72,7 +72,7 @@ To publish, use the same process as `rfs`:
 
 The release workflow generates a version from the current UTC build time: `YYYY.MD.HMS`, with no leading zeroes. For example, `2026-07-09 20:01:11 UTC` becomes `2026.709.200111`. Each later build gets a higher version that VS Code can recognize as an upgrade.
 
-The version is stamped into the VS Code package manifest only in the build checkout. The checked-in versions remain development defaults: **you do not edit version numbers or create/push tags**. GitHub creates the timestamp tag at the source commit being built and publishes `pide-vscode.vsix` as the latest release. Releases are serialized so builds do not race to publish out of order.
+The version is stamped into the VS Code package manifest only in the build checkout. The checked-in versions remain development defaults: **you do not edit version numbers or create/push tags**. GitHub creates the timestamp tag at the source commit being built and publishes `piref-vscode.vsix` as the latest release. Releases are serialized so builds do not race to publish out of order.
 
 Only GitHub's automatically supplied `GITHUB_TOKEN` is used. No Marketplace credentials or npm publishing account are needed. `/ide-setup` continues to install the latest stable GitHub release.
 

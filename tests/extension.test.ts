@@ -1,6 +1,6 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import pide from "../index";
+import piref from "../index";
 
 const files = vi.hoisted(() => ({
   readFile: vi.fn(),
@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(Date, "now").mockReturnValue(NOW);
   files.readFile.mockResolvedValue(JSON.stringify(selection));
-  files.mkdtemp.mockResolvedValue("/tmp/pide-install-test");
+  files.mkdtemp.mockResolvedValue("/tmp/piref-install-test");
   files.writeFile.mockResolvedValue(undefined);
   files.rm.mockResolvedValue(undefined);
   commands = new Map();
@@ -41,7 +41,7 @@ beforeEach(() => {
   ctx = { ui: { setEditorText, notify, setWidget } } as unknown as ExtensionCommandContext;
   fetchMock = vi.fn().mockResolvedValue(new Response(new Uint8Array([80, 75, 3, 4])));
   vi.stubGlobal("fetch", fetchMock);
-  pide({
+  piref({
     registerCommand: (name: string, command: Command) => commands.set(name, command),
     exec,
     on,
@@ -76,7 +76,7 @@ describe("minimal Pi integration", () => {
 
   it.each(["", "explain this"])("requests a repaint after setting editor text (%j)", async args => {
     await run("ide", args);
-    expect(setWidget).toHaveBeenCalledExactlyOnceWith("pide-repaint", undefined);
+    expect(setWidget).toHaveBeenCalledExactlyOnceWith("piref-repaint", undefined);
     expect(setWidget.mock.invocationCallOrder[0]).toBeGreaterThan(setEditorText.mock.invocationCallOrder[0]!);
     expect(notify).not.toHaveBeenCalled();
   });
@@ -159,15 +159,15 @@ describe("VS Code setup without Marketplace access", () => {
   it("downloads the fork's release, sideloads it, and removes temporary files", async () => {
     await run("ide-setup");
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://github.com/kitevi/pide/releases/latest/download/pide-vscode.vsix",
+      "https://github.com/kitevi/piref/releases/latest/download/piref-vscode.vsix",
       { signal: expect.any(AbortSignal) },
     );
     expect(exec.mock.calls).toEqual([
       ["code", ["--version"], { timeout: 10_000 }],
-      ["code", ["--install-extension", "/tmp/pide-install-test/pide-vscode.vsix", "--force"], { timeout: 60_000 }],
+      ["code", ["--install-extension", "/tmp/piref-install-test/piref-vscode.vsix", "--force"], { timeout: 60_000 }],
     ]);
-    expect(files.writeFile).toHaveBeenCalledWith("/tmp/pide-install-test/pide-vscode.vsix", new Uint8Array([80, 75, 3, 4]));
-    expect(files.rm).toHaveBeenCalledWith("/tmp/pide-install-test", { recursive: true, force: true });
+    expect(files.writeFile).toHaveBeenCalledWith("/tmp/piref-install-test/piref-vscode.vsix", new Uint8Array([80, 75, 3, 4]));
+    expect(files.rm).toHaveBeenCalledWith("/tmp/piref-install-test", { recursive: true, force: true });
     expect(notify).toHaveBeenLastCalledWith(expect.stringContaining("companion installed"), "info");
     expect(files.readFile).not.toHaveBeenCalled();
   });
@@ -185,7 +185,7 @@ describe("VS Code setup without Marketplace access", () => {
     await run("ide-setup");
     expect(exec).toHaveBeenCalledTimes(1);
     expect(files.mkdtemp).not.toHaveBeenCalled();
-    expect(notify).toHaveBeenLastCalledWith(expect.stringContaining("A release containing pide-vscode.vsix must exist"), "error");
+    expect(notify).toHaveBeenLastCalledWith(expect.stringContaining("A release containing piref-vscode.vsix must exist"), "error");
   });
 
   it("reports network errors", async () => {

@@ -1,5 +1,5 @@
 {
-  "name": "pide-vscode",
+  "name": "piref-vscode",
   "displayName": "Pi VS Code References",
   "description": "Make the current VS Code file and line range available to Pi's /ide command.",
   "version": "0.2.0",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kitevi/pide",
+    "url": "https://github.com/kitevi/piref",
     "directory": "vscode-plugin"
   },
   "engines": {
@@ -20,7 +20,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package --no-dependencies --out pide-vscode.vsix"
+    "package": "vsce package --no-dependencies --out piref-vscode.vsix"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

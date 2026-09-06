@@ -47,7 +47,7 @@ function writeSelection() {
     lastWrittenContent = content;
   } catch (error) {
     try { fs.unlinkSync(TEMP_FILE); } catch { /* Nothing to clean up. */ }
-    console.error("pide: Failed to write VS Code selection:", error);
+    console.error("piref: Failed to write VS Code selection:", error);
   }
 }
 
