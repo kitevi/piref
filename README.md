@@ -41,6 +41,8 @@ The companion uses the `your-name.piref-vscode` extension ID. This publisher fie
 
 The VS Code companion automatically writes the active file path, optional line range, and timestamp to `~/.pi/ide-selection.json`. It does not store the selected source text. Pi reads that file only when `/ide` runs. Missing, invalid, or more-than-one-hour-old selections are ignored.
 
+Historical diffs, unsaved files, and other non-file editors cannot be referenced by path. The companion records an explicit unsupported status for those editors (still without storing source text), and `/ide` explains that limitation instead of inserting a stale reference.
+
 All local Pi sessions share the most recently reported VS Code selection. No servers, ports, status widgets, or Pi file watchers are involved.
 
 ## Development

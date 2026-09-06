@@ -90,6 +90,20 @@ describe("minimal Pi integration", () => {
     expect(setEditorText).toHaveBeenCalledWith(`Referencing /project/file.ts${suffix}\n`);
   });
 
+  it("does not mistake an unsupported false flag for an unsupported editor", async () => {
+    files.readFile.mockResolvedValue(JSON.stringify({ ...selection, unsupported: false }));
+    await run("ide");
+    expect(setEditorText).toHaveBeenCalledWith("Referencing /project/file.ts\n");
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsupported status without its scheme", async () => {
+    files.readFile.mockResolvedValue(JSON.stringify({ ide: "vscode", timestamp: NOW, unsupported: true }));
+    await run("ide");
+    expect(setEditorText).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining("No recent VS Code selection"), "warning");
+  });
+
   it("re-reads rather than caching an old selection", async () => {
     await run("ide");
     files.readFile.mockResolvedValue(JSON.stringify({ ...selection, file: "/project/new.ts" }));
@@ -152,6 +166,37 @@ describe("minimal Pi integration", () => {
     await run("ide");
     expect(setEditorText).not.toHaveBeenCalled();
     expect(notify).toHaveBeenCalledWith(expect.any(String), "warning");
+  });
+
+  it("explains an unsupported editor instead of inserting a stale reference", async () => {
+    files.readFile.mockResolvedValue(JSON.stringify({ ide: "vscode", timestamp: NOW, unsupported: true, scheme: "git" }));
+    await run("ide");
+    expect(setEditorText).not.toHaveBeenCalled();
+    expect(setWidget).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining("doesn't support file references"), "warning");
+  });
+
+  it("preserves prompt text when the current editor is unsupported", async () => {
+    files.readFile.mockResolvedValue(JSON.stringify({ ide: "vscode", timestamp: NOW, unsupported: true, scheme: "git" }));
+    await run("ide", "don't lose me");
+    expect(setEditorText).toHaveBeenCalledWith("don't lose me");
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining("doesn't support file references"), "warning");
+  });
+
+  it("treats a stale unsupported status as a missing selection", async () => {
+    files.readFile.mockResolvedValue(
+      JSON.stringify({ ide: "vscode", timestamp: NOW - 3_600_001, unsupported: true, scheme: "git" }),
+    );
+    await run("ide");
+    expect(setEditorText).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining("No recent VS Code selection"), "warning");
+  });
+
+  it("treats a malformed unsupported status as a missing selection", async () => {
+    files.readFile.mockResolvedValue(JSON.stringify({ ide: "vscode", timestamp: NOW, unsupported: true, scheme: 42 }));
+    await run("ide");
+    expect(setEditorText).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining("No recent VS Code selection"), "warning");
   });
 });
 

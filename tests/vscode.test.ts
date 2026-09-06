@@ -107,15 +107,51 @@ describe("minimal VS Code companion", () => {
     expect(lastData().file).toBe("/project/next.ts");
   });
 
-  it.each(["untitled", "no-editor"])("clears its selection for %s", state => {
+  it.each(["git", "untitled"])("records an explicit unsupported status for %s editors, without storing source text", scheme => {
+    start();
+    window.activeTextEditor!.document.uri.scheme = scheme;
+    window.activeTextEditor!.selection = {
+      isEmpty: false,
+      start: { line: 55, character: 0 },
+      end: { line: 62, character: 0 },
+    };
+    window.onDidChangeActiveTextEditor.mock.calls[0]![0]();
+    vi.advanceTimersByTime(100);
+    expect(lastData()).toEqual({
+      ide: "vscode",
+      timestamp: Date.now(),
+      unsupported: true,
+      scheme,
+    });
+  });
+
+  it("replaces a stale file reference when moving to an unsupported editor", () => {
     start();
     const path = selectionPath();
-    if (state === "no-editor") window.activeTextEditor = undefined;
-    else window.activeTextEditor!.document.uri.scheme = "untitled";
+    expect(JSON.parse(disk.get(path)!)).toHaveProperty("file");
+    window.activeTextEditor!.document.uri.scheme = "git";
+    window.onDidChangeActiveTextEditor.mock.calls[0]![0]();
+    vi.advanceTimersByTime(100);
+    expect(JSON.parse(disk.get(path)!)).toMatchObject({ unsupported: true, scheme: "git" });
+  });
+
+  it("clears its selection when no editor is active", () => {
+    start();
+    const path = selectionPath();
+    window.activeTextEditor = undefined;
     window.onDidChangeActiveTextEditor.mock.calls[0]![0]();
     vi.advanceTimersByTime(100);
     expect(disk.has(path)).toBe(false);
     expect(files.writeFileSync).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears an unsupported status on shutdown", () => {
+    window.activeTextEditor!.document.uri.scheme = "git";
+    start();
+    const path = selectionPath();
+    expect(JSON.parse(disk.get(path)!)).toMatchObject({ unsupported: true });
+    deactivate();
+    expect(disk.has(path)).toBe(false);
   });
 
   it("cancels pending writes and clears its selection on shutdown", () => {

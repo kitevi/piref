@@ -16,25 +16,40 @@ interface Selection {
   endLine?: number;
 }
 
-async function readSelection(): Promise<Selection | null> {
+const UNSUPPORTED_EDITOR_MESSAGE =
+  "This editor doesn't support file references (for example, a historical Git diff or an unsaved file). Open a saved file in VS Code and select there instead.";
+
+type SelectionResult = { kind: "file"; selection: Selection } | { kind: "unsupported" };
+
+async function readSelection(): Promise<SelectionResult | null> {
   try {
     const data: unknown = JSON.parse(await readFile(SELECTION_FILE, "utf8"));
     if (!data || typeof data !== "object") return null;
-    const selection = data as Partial<Selection>;
+    const record = data as Record<string, unknown>;
+    const { file, ide, timestamp, startLine, endLine } = record;
     if (
-      typeof selection.file !== "string" || !isAbsolute(selection.file) ||
-      selection.ide !== "vscode" ||
-      typeof selection.timestamp !== "number" || !Number.isSafeInteger(selection.timestamp) ||
-      selection.timestamp <= 0 || Date.now() - selection.timestamp > MAX_SELECTION_AGE_MS
+      ide !== "vscode" ||
+      typeof timestamp !== "number" || !Number.isSafeInteger(timestamp) ||
+      timestamp <= 0 || Date.now() - timestamp > MAX_SELECTION_AGE_MS
     ) return null;
 
-    if (selection.startLine !== undefined || selection.endLine !== undefined) {
-      if (
-        !Number.isSafeInteger(selection.startLine) || !Number.isSafeInteger(selection.endLine) ||
-        selection.startLine! < 1 || selection.endLine! < selection.startLine!
-      ) return null;
+    if (record.unsupported === true) {
+      if (typeof record.scheme !== "string") return null;
+      return { kind: "unsupported" };
     }
-    return selection as Selection;
+    if (typeof file !== "string" || !isAbsolute(file)) return null;
+
+    const selection: Selection = { file, ide, timestamp };
+    if (startLine !== undefined || endLine !== undefined) {
+      if (
+        typeof startLine !== "number" || typeof endLine !== "number" ||
+        !Number.isSafeInteger(startLine) || !Number.isSafeInteger(endLine) ||
+        startLine < 1 || endLine < startLine
+      ) return null;
+      selection.startLine = startLine;
+      selection.endLine = endLine;
+    }
+    return { kind: "file", selection };
   } catch {
     return null;
   }
@@ -70,14 +85,16 @@ export default function piref(pi: ExtensionAPI) {
   pi.registerCommand("ide", {
     description: "Insert the current VS Code file or selection reference [prompt]",
     handler: async (args, ctx) => {
-      const selection = await readSelection();
-      if (!selection) {
+      const result = await readSelection();
+      if (!result || result.kind === "unsupported") {
         const fallback = buildFallbackText(args);
         if (fallback !== null) ctx.ui.setEditorText(fallback);
-        ctx.ui.notify("No recent VS Code selection. Open a file in VS Code, or run /ide-setup first.", "warning");
+        const message = result ? UNSUPPORTED_EDITOR_MESSAGE
+          : "No recent VS Code selection. Open a file in VS Code, or run /ide-setup first.";
+        ctx.ui.notify(message, "warning");
         return;
       }
-      ctx.ui.setEditorText(buildIdeText(selection, args));
+      ctx.ui.setEditorText(buildIdeText(result.selection, args));
       // Older pi versions don't repaint after setEditorText; removing an unused widget does.
       ctx.ui.setWidget("piref-repaint", undefined);
     },
