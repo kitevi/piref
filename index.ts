@@ -8,18 +8,46 @@ const MAX_SELECTION_AGE_MS = 60 * 60 * 1000;
 const RELEASES_URL = "https://github.com/kitevi/piref/releases";
 const VSIX_URL = `${RELEASES_URL}/latest/download/piref-vscode.vsix`;
 
+interface LineRange {
+  startLine: number;
+  endLine: number;
+}
+
+/** A git revision, or a stage of the git index (0 = staged, 1-3 = merge base, ours, theirs). */
+type GitSource = { revision: string } | { stage: number };
+
 interface Selection {
   file: string;
   ide: "vscode";
   timestamp: number;
-  startLine?: number;
-  endLine?: number;
+  ranges: LineRange[];
+  git?: GitSource;
+  cell?: number;
 }
 
 const UNSUPPORTED_EDITOR_MESSAGE =
-  "This editor doesn't support file references (for example, a historical Git diff or an unsaved file). Open a saved file in VS Code and select there instead.";
+  "This editor doesn't support file references (for example, an unsaved file). Open a saved file in VS Code and select there instead.";
 
 type SelectionResult = { kind: "file"; selection: Selection } | { kind: "unsupported" };
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1;
+}
+
+function parseRange(startLine: unknown, endLine: unknown): LineRange | null {
+  if (!isPositiveInteger(startLine) || !isPositiveInteger(endLine) || endLine < startLine) return null;
+  return { startLine, endLine };
+}
+
+function parseGitSource(value: unknown): GitSource | null {
+  if (!value || typeof value !== "object") return null;
+  const { revision, stage } = value as Record<string, unknown>;
+  if (revision !== undefined && stage !== undefined) return null;
+  // The revision is inserted into Pi's input: allow a single short token only.
+  if (typeof revision === "string" && /^\S{1,200}$/.test(revision)) return { revision };
+  if (typeof stage === "number" && Number.isInteger(stage) && stage >= 0 && stage <= 3) return { stage };
+  return null;
+}
 
 async function readSelection(): Promise<SelectionResult | null> {
   try {
@@ -39,15 +67,28 @@ async function readSelection(): Promise<SelectionResult | null> {
     }
     if (typeof file !== "string" || !isAbsolute(file)) return null;
 
-    const selection: Selection = { file, ide, timestamp };
+    const selection: Selection = { file, ide, timestamp, ranges: [] };
     if (startLine !== undefined || endLine !== undefined) {
-      if (
-        typeof startLine !== "number" || typeof endLine !== "number" ||
-        !Number.isSafeInteger(startLine) || !Number.isSafeInteger(endLine) ||
-        startLine < 1 || endLine < startLine
-      ) return null;
-      selection.startLine = startLine;
-      selection.endLine = endLine;
+      const range = parseRange(startLine, endLine);
+      if (!range) return null;
+      selection.ranges = [range];
+    }
+    if (record.ranges !== undefined) {
+      // Several selections; startLine/endLine repeat the first for older Pi packages.
+      if (!Array.isArray(record.ranges) || record.ranges.length === 0) return null;
+      const ranges = record.ranges.map(range =>
+        range && typeof range === "object" ? parseRange(range.startLine, range.endLine) : null);
+      if (ranges.some(range => range === null)) return null;
+      selection.ranges = ranges as LineRange[];
+    }
+    if (record.git !== undefined) {
+      const git = parseGitSource(record.git);
+      if (!git) return null;
+      selection.git = git;
+    }
+    if (record.cell !== undefined) {
+      if (!isPositiveInteger(record.cell)) return null;
+      selection.cell = record.cell;
     }
     return { kind: "file", selection };
   } catch {
@@ -55,13 +96,26 @@ async function readSelection(): Promise<SelectionResult | null> {
   }
 }
 
+const INDEX_STAGES = ["staged", "merge base", "ours", "theirs"];
+
+function formatGitSource(git: GitSource): string {
+  return "revision" in git
+    ? `git revision ${git.revision}`
+    : `${INDEX_STAGES[git.stage]} version in the git index`;
+}
+
 function formatReference(selection: Selection): string {
+  const lines = selection.ranges
+    .map(({ startLine, endLine }) => startLine === endLine ? `${startLine}` : `${startLine}-${endLine}`)
+    .join(",");
   let reference = selection.file;
-  if (selection.startLine !== undefined && selection.endLine !== undefined) {
-    reference += selection.startLine === selection.endLine
-      ? `:${selection.startLine}`
-      : `:${selection.startLine}-${selection.endLine}`;
+  if (selection.cell !== undefined) {
+    reference += `, cell ${selection.cell}`;
+    if (lines) reference += `, lines ${lines}`;
+  } else if (lines) {
+    reference += `:${lines}`;
   }
+  if (selection.git) reference += ` (${formatGitSource(selection.git)})`;
   return `Referencing ${reference}\n`;
 }
 

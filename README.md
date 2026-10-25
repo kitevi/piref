@@ -39,11 +39,24 @@ The companion uses the `your-name.piref-vscode` extension ID. This publisher fie
 
 ## How it works
 
-The VS Code companion automatically writes the active file path, optional line range, and timestamp to `~/.pi/ide-selection.json`. It does not store the selected source text. Pi reads that file only when `/ide` runs. Missing, invalid, or more-than-one-hour-old selections are ignored.
+The VS Code companion automatically writes the active file path, optional line ranges, and timestamp to `~/.pi/ide-selection.json`. It does not store the selected source text. Pi reads that file only when `/ide` runs. Missing, invalid, or more-than-one-hour-old selections are ignored; the companion refreshes an idle reference every ten minutes so it doesn't expire while VS Code is open.
 
-Historical diffs, unsaved files, and other non-file editors cannot be referenced by path. The companion records an explicit unsupported status for those editors (still without storing source text), and `/ide` explains that limitation instead of inserting a stale reference.
+References can include:
 
-All local Pi sessions share the most recently reported VS Code selection. No servers, ports, status widgets, or Pi file watchers are involved.
+| Where you select | Reference |
+| --- | --- |
+| A saved file | `Referencing /path/to/file.ts:10-15` |
+| Several selections (multiple cursors) | `Referencing /path/to/file.ts:3-5,10,21-22` |
+| A Git diff (VS Code's built-in Git or Speedy Git) | `Referencing /path/to/file.ts:10-15 (git revision HEAD)` or `(staged version in the git index)` |
+| A notebook cell | `Referencing /path/to/notebook.ipynb, cell 2, lines 2-3` |
+
+Line numbers in a Git diff refer to the version shown on that side of the diff, which is why the revision or index stage is included.
+
+Unsaved files, submodule diffs, and other virtual editors cannot be referenced by path. The companion records an explicit unsupported status for those editors (still without storing source text), and `/ide` explains that limitation instead of inserting a stale reference. Focusing the Output panel or a non-text tab such as Settings or an image keeps the last reference.
+
+With several VS Code windows open, the window you last focused owns the reference. Background windows never replace another window's reference, so a file reloading in a window you aren't looking at cannot steal it. All local Pi sessions share that one reference. No servers, ports, status widgets, or Pi file watchers are involved.
+
+Update the Pi package and the VS Code companion together: an older Pi package shows only the first line range and omits the Git revision.
 
 ## Development
 
