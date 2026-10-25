@@ -3,7 +3,7 @@
   "displayName": "Pi VS Code References",
   "description": "Make the current VS Code file and line range available to Pi's /ide command.",
   "version": "0.2.0",
-  "publisher": "your-name",
+  "publisher": "kitevi",
   "license": "MIT",
   "repository": {
     "type": "git",

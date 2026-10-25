@@ -14,7 +14,7 @@ Run `/ide-setup` in Pi, or download `piref-vscode.vsix` from the repository's Gi
 code --install-extension piref-vscode.vsix --force
 ```
 
-Reload the VS Code window after installing. No Marketplace publishing or login is involved. The companion uses the `your-name.piref-vscode` extension ID.
+Reload the VS Code window after installing. No Marketplace publishing or login is involved. The companion uses the `kitevi.piref-vscode` extension ID.
 
 ## Build locally
 

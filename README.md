@@ -35,7 +35,7 @@ code --install-extension /path/to/piref-vscode.vsix --force
 
 VS Code's `code` CLI must be on `PATH`. The first GitHub release must exist before `/ide-setup` can download it; see below. You can also build and install the VSIX locally without any account.
 
-The companion uses the `your-name.piref-vscode` extension ID. This publisher field is package metadata, not a Microsoft login. If you previously installed the old `your-name.pide-vscode` companion, uninstall it to avoid running two copies.
+The companion uses the `kitevi.piref-vscode` extension ID. This publisher field is package metadata, not a Microsoft login. If you previously installed the old `your-name.pide-vscode` companion, or this extension under a different publisher, uninstall it to avoid running two copies.
 
 ## How it works
 
